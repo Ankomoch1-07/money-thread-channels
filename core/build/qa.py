@@ -10,7 +10,7 @@ B:素材整合 は check_assets.py に委譲、F:ファクト照合 は ingest.j
 """
 import sys, re, json, pathlib
 
-SPEAKERS = {"四国めたん", "ずんだもん", "玄野武宏", "青山龍星", "九州そら", "春日部つむぎ"}
+SPEAKERS = {"四国めたん", "ずんだもん", "玄野武宏", "青山龍星", "九州そら", "春日部つむぎ", "No.7"}
 NG_PATTERNS = ["必ず上がる", "必ず儲か", "絶対安全", "今すぐ買え", "絶対に儲か"]
 CHARS_PER_MIN = 380          # 暫定。channel_03の実レンダで実測して確定する（QA.md 参照）
 MIN_CHARS, MAX_CHARS = 10500, 12000
