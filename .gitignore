@@ -29,3 +29,9 @@ __pycache__/
 
 # slot_fill の充填済みプロンプト（生成物）
 **/out/*.prompt.txt
+
+# 自動生成台本（実行時生成物）。手書きfixtureのep_test01のみ追跡
+channels/*/scripts/*.txt
+!channels/*/scripts/ep_test01.txt
+# topic_ledgerは実行時状態
+channels/*/topic_ledger.json

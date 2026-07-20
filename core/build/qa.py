@@ -41,23 +41,30 @@ def check(text: str) -> list:
     n_short = len(re.findall(r"\[SHORT候補\]", text))
     if n_graph < 2: fails.append(f"C: [GRAPH:] が {n_graph}（≥2 必要）")
     if n_short < 3: fails.append(f"C: [SHORT候補] が {n_short}（≥3 必要）")
-    # 数値を含むが [要ファクトチェック] の無い本文行を検出
+    # 「精密な数値」だけ [要ファクトチェック] 欠落を検出（丸め数字4000・年号5000年・回数20年は誤検知なので除外）
+    #   精密＝小数(4023.6) / 桁区切り(21,011) / 5桁以上(21011)。
+    precise = re.compile(r"\d\.\d|\d{1,3}(?:,\d{3})+|\d{5,}")
     for l in body_lines:
         body = re.sub(r"【[^】]+】", "", l)
-        if re.search(r"[0-9０-９]", body) and "[要ファクトチェック]" not in l and "[GRAPH:" not in l:
-            # 年号や番号だけの誤検知は許容度を上げる余地あり（TODO: 数値種別の判定）
-            fails.append(f"C: 数値に[要ファクトチェック]欠落の可能性: {body[:24]}")
+        if precise.search(body) and "[要ファクトチェック]" not in l and "[GRAPH:" not in l:
+            fails.append(f"C: 精密数値に[要ファクトチェック]欠落: {body[:24]}")
 
     # D: 尺
     body_chars = sum(len(re.sub(r"【[^】]+】|\[[^\]]+\]", "", l)) for l in body_lines)
     minutes = body_chars / CHARS_PER_MIN
     if body_chars < MIN_CHARS:
         fails.append(f"D: 本文 {body_chars}字（{minutes:.1f}分）< 下限 {MIN_CHARS}字。増補が必要")
+    elif body_chars > MAX_CHARS * 1.05:      # 上限は5%の余裕を許容
+        fails.append(f"D: 本文 {body_chars}字（{minutes:.1f}分）> 上限 {MAX_CHARS}字。やや長い（任意で圧縮）")
 
-    # E: コンプラNG語
+    # E: コンプラNG語（否定文脈「〜ではない/ありません」は許容＝誤検知回避）
+    NEG = ("ない", "なく", "ありませ", "じゃ", "ではな", "でなく", "ません")
     for ng in NG_PATTERNS:
-        if ng in text:
-            fails.append(f"E: 禁止表現「{ng}」を検出")
+        for m in re.finditer(re.escape(ng), text):
+            seg = text[m.end():].split("。")[0][:60]     # 同一文の残り（複合否定「〜でも〜でもありません」に対応）
+            if not any(neg in seg for neg in NEG):
+                fails.append(f"E: 禁止表現「{ng}」を検出（否定文脈でない）")
+                break
 
     return fails
 

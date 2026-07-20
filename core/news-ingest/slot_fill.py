@@ -37,25 +37,47 @@ def build_params(ingest: dict, ledger: dict) -> str:
 
 ## 除外（過去に扱った軸/スレタイ。被らせないこと）
 {seen}
-
-## 指示
-script_prompt.md の「③ 台本生成プロンプト」に厳密に従い、上の素材で台本DSLを出力せよ。
-- 数値は必ず上の fact 値を使い、直後に [要ファクトチェック] を付ける。
-- 「最高値更新か」が「いいえ」の場合、「最高値更新」と書かない（事実に反するため）。
-- 出力は台本本文（# タイトル行＋【話者名】…）のみ。前置き・後書きは不要。
 """
+
+COMMON_RULES = (
+    "- 話者名は必ず次の6名のみを一字一句そのまま使う（改変・別名・誤字は禁止）：\n"
+    "  四国めたん / ずんだもん / 玄野武宏 / 青山龍星 / 九州そら / 春日部つむぎ。\n"
+    "  ※「春日部つむぎ」を七尾つむぎ等に変えない。\n"
+    "- 数値は必ず上の fact 値を使い、直後に [要ファクトチェック] を付ける。\n"
+    "- 「最高値更新か」が「いいえ」の場合、「最高値更新」と書かない（事実に反するため）。\n"
+    "- 各掛け合いブロックは最低8〜12レス。薄く終わらせない。\n"
+    "- 出力は台本本文（【話者名】…）のみ。前置き・後書き・説明文は書かない。\n"
+)
+
+# 章分割マルチパス（17ブロックを3部に分割 → 各部opusで生成し結合 → 単発の頭打ちを回避し30分尺に到達）
+PASSES = [
+    ("第1部 掴み・対立", True,
+     "ブロック1〜6（1導入/2問題提起/3逆張り登場/4定義/5解説①実質金利[GRAPH:]/6ドル指数）を書く。"
+     "冒頭に # タイトル行（【2chゴールドスレ】＋フック＋【2ch有益スレ】）とナレーター導入を置き、価格はここで一度だけ提示する。"),
+    ("第2部 種明かし", False,
+     "ブロック7〜12（7有事/8インフレ/9中銀買い/10解説②長期チャート[GRAPH:]/11金vsBTC/12金vs米国株）を書く。"
+     "# タイトルや導入は書かない。直前の会話の続きから自然に始め、同じ論点・レスを繰り返さない。"),
+    ("第3部 実需オチ", False,
+     "ブロック13〜17（13現物vsETFvs積立/14ワイの体験談で山場/15買い時と積立[GRAPH:]/16税金・出口/17結論+CTA）を書く。"
+     "# タイトルや導入は書かない。必ずナレーターの結論と、コメント誘導・登録/高評価/スパチャのCTAで締める。"),
+]
+
+def _strip_leading_title(text: str) -> str:
+    lines = text.splitlines()
+    return "\n".join(l for l in lines if not l.strip().startswith("#")).strip()
 
 def call_claude(system_and_prompt: str) -> str:
     key = os.environ["ANTHROPIC_API_KEY"]
     body = json.dumps({
-        "model": MODEL, "max_tokens": 16000,
+        "model": MODEL, "max_tokens": int(os.environ.get("INGEST_MAX_TOKENS", "32000")),
         "messages": [{"role": "user", "content": system_and_prompt}],
     }).encode()
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages", data=body,
         headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                  "content-type": "application/json"})
-    resp = json.loads(urllib.request.urlopen(req, timeout=180).read())
+    timeout = int(os.environ.get("INGEST_HTTP_TIMEOUT", "600"))  # opusは長尺で>180sになる
+    resp = json.loads(urllib.request.urlopen(req, timeout=timeout).read())
     return "".join(b.get("text", "") for b in resp.get("content", []))
 
 def main(channel: str, ep: str) -> int:
@@ -64,19 +86,37 @@ def main(channel: str, ep: str) -> int:
     ingest = json.loads((chdir / "ingest.json").read_text(encoding="utf-8"))
     prompt_spec = (chdir / "script_prompt.md").read_text(encoding="utf-8")
     ledger_path = chdir / "topic_ledger.json"
-    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_path.exists() \
+        else {"generated": []}
 
-    full = prompt_spec + "\n\n" + build_params(ingest, ledger)
+    params = build_params(ingest, ledger)
+    base = prompt_spec + "\n\n" + params
+    passes = int(os.environ.get("INGEST_PASSES", "3"))   # 既定3部マルチパス。1で単発
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
         outp = chdir / "out" / f"{ep}.prompt.txt"
         outp.parent.mkdir(parents=True, exist_ok=True)
-        outp.write_text(full, encoding="utf-8")
-        print(f"[slot_fill] ANTHROPIC_API_KEY未設定 → 充填済みプロンプトを {outp} に出力。")
-        print("            これをLLMに貼れば台本が得られます（channel_03の手貼り運用互換）。")
+        outp.write_text(base + "\n\n## 指示\n③に従い全17ブロックを書く。\n" + COMMON_RULES, encoding="utf-8")
+        print(f"[slot_fill] ANTHROPIC_API_KEY未設定 → 充填済みプロンプトを {outp} に出力（手貼り互換）。")
         return 0
 
-    script = call_claude(full)
+    if passes >= 2:
+        acc = []
+        for i, (name, is_head, instr) in enumerate(PASSES):
+            tail = "\n".join("\n".join(acc).splitlines()[-14:]) if acc else ""
+            msg = base
+            if tail:
+                msg += "\n\n## ここまでの流れ（これに続けて書く。繰り返さない）\n" + tail
+            msg += f"\n\n## 今回書く範囲：{name}\n{instr}\n{COMMON_RULES}"
+            out = call_claude(msg)
+            out = out.strip() if is_head else _strip_leading_title(out)
+            acc.append(out)
+            n = sum(len(l) for l in out.splitlines() if l.startswith("【"))
+            print(f"[slot_fill] {name}: 生成 {n}字")
+        script = "\n".join(acc)
+    else:
+        script = call_claude(base + "\n\n## 指示\n③に従い全17ブロックを書く。\n" + COMMON_RULES)
+
     sp = chdir / "scripts" / f"{ep}.txt"
     sp.parent.mkdir(parents=True, exist_ok=True)
     sp.write_text(script, encoding="utf-8")
