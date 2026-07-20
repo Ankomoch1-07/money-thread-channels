@@ -38,12 +38,18 @@ def main(channel: str) -> int:
     (pub / "irasutoya").mkdir(parents=True, exist_ok=True)
     (pub / "bg").mkdir(parents=True, exist_ok=True)
 
+    made = 0
     for a in manifest["assets"]:
         k = a["key"]
-        label_png(pub / "irasutoya" / f"{k}.png", f"{k}\n(placeholder)", color_of.get(k, "#8a6d1f"))
-    bg_png(pub / "bg" / "gold.png", channel)
-    n = len(manifest["assets"])
-    print(f"生成: {n} 素材PNG + bg/gold.png → {pub}")
+        p = pub / "irasutoya" / f"{k}.png"
+        if p.exists():
+            continue        # 既存(実素材含む)は上書きしない＝安全に再実行できる
+        label_png(p, f"{k}\n(placeholder)", color_of.get(k, "#8a6d1f"))
+        made += 1
+    bgp = pub / "bg" / "gold.png"
+    if not bgp.exists():
+        bg_png(bgp, channel)
+    print(f"生成: 不足していた {made} 素材PNGのみ補完 → {pub}/irasutoya")
     print("※ プレースホルダです。実運用ではいらすとや実素材に差し替えてください。")
     return 0
 
