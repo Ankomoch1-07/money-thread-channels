@@ -1,7 +1,7 @@
 {
   "_note": "channel_03のBoard.tsxハードコード(CHARA色/背景)とcheck_assets.pyのSPEAKER_DEFAULT(話者→既定素材)をチャンネル別に外出ししたもの。casting流用なのでキャラ色はchannel_03を踏襲、背景とタイトル色をゴールド基調に。",
   "accent": "#D4AF37",
-  "bg": "bg/gold.mp4",
+  "bg": "bg/gold.png",
   "titleBg": "rgba(30,24,10,.92)",
   "titleColor": "#F5E6B3",
   "chara": {

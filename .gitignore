@@ -6,6 +6,11 @@
 core/remotion/node_modules/
 node_modules/
 
+# Remotion public は生成物（プレースホルダ素材/run.shが配置したtheme・timeline・graph）。
+# 実素材/背景も含めコミットしない（procure or generate で再現）。
+core/remotion/public/*/
+!core/remotion/public/.gitkeep
+
 # secrets / auth
 **/client_secret.json
 **/token.json

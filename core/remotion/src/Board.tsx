@@ -25,14 +25,17 @@ export const Board: React.FC<{ channel: string; ep: string; timeline: Timeline; 
   const cur = segs[idx] ?? segs[segs.length - 1];
   const visible = segs.slice(Math.max(0, idx - 2), idx + 1); // 直近3レスを左上に積む
   const imgKey = cur?.img ?? theme.chara[cur?.name ?? ""]?.img;
+  const bgIsVideo = /\.(mp4|webm|mov)$/i.test(theme.bg);
+  const bgStyle = { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" } as const;
 
   return (
     <AbsoluteFill style={{ fontFamily: "sans-serif" }}>
-      {/* 背景：チャンネル別の動画素材（例 public/<channel>/bg/gold.mp4） */}
-      <OffthreadVideo
-        src={staticFile(`${channel}/${theme.bg}`)} muted loop
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-      />
+      {/* 背景：チャンネル別素材（動画 public/<channel>/bg/gold.mp4 / 静止画プレースホルダ .png の両対応） */}
+      {bgIsVideo ? (
+        <OffthreadVideo src={staticFile(`${channel}/${theme.bg}`)} muted loop style={bgStyle} />
+      ) : (
+        <Img src={staticFile(`${channel}/${theme.bg}`)} style={bgStyle} />
+      )}
       <Audio src={staticFile(`${channel}/${ep}/voice.wav`)} />
 
       {/* 右上：スレタイ帯 */}
