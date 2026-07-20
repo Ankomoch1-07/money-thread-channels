@@ -7,19 +7,16 @@ topics: [gold_price, real_rate, usd_index, geopolitics, central_bank_gold]
 
 layers:
   fact:
-    provider: goldapi.io      # まず無料枠。XAU/USD, USD/JPY を取得
+    provider: yahoo           # 無料・キー不要。GC=F(金先物≈スポット) + JPY=X(USD/JPY)
     required: true            # 唯一の必須層。落ちたら生成停止
-    compute_jpy_per_gram: true
-    cache: true               # 日次1リクエストで無料枠を節約
-    fallback: websearch       # 無料枠が尽きた/落ちた日は discovery(WebSearch) で拾う
-    # apiKeyEnv: GOLDAPI_KEY
+    compute_jpy_per_gram: true  # XAU/USD × USD/JPY ÷ 31.1035
+    # ※ stooqはJSアンチボットで不可になったためYahooに変更(2026-07)
+    fallback: websearch       # 落ちた日は discovery(WebSearch) で拾う
 
   reference:
-    keywords: [金, ゴールド, gold, XAU, 貴金属, 金価格]
-    rss:                      # TODO: 実URLを確定
-      - { id: reuters_markets, url: "" }
-      - { id: minkabu_gold,    url: "" }
-      - { id: investing_commodities, url: "" }
+    keywords: [gold, XAU, 金, ゴールド, 貴金属]
+    rss:                      # 無料・キー不要のYahooニュースヘッドライン(金)。JP feedは追って追加
+      - { id: yahoo_gold, url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=GC=F&region=US&lang=en-US" }
 
   flavor:                     # ★ローンチから有効
     enabled: true

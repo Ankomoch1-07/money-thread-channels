@@ -1,31 +1,56 @@
 #!/usr/bin/env python3
 """fact層：金価格の数値取得（唯一の必須層・断定してよい層）。
 
-XAU/USD と USD/JPY を価格APIから取得し、円/g を自前計算する。
-まずは無料枠(goldapi.io / metalpriceapi 等)で検証。日次1リクエスト＋キャッシュで枠を節約。
-API失敗時は WebSearch フォールバック（discovery経由）に委譲する想定。
-ここが取れなければ台本の数値が書けないため、build_ingest 側で required=True 扱い。
+無料・キー不要の Yahoo Finance チャートAPIを使う（stooqはJSアンチボットで不可になったため変更）。
+  金 = GC=F（COMEX金先物・ほぼスポット）／ USD/JPY = JPY=X
+円/g は自前計算：XAU/USD × USD/JPY ÷ 31.1035。
+履歴も取れるので is_record_high（最高値圏か）と長期チャート用データもここで賄える。
+ここが取れなければ台本の数値が書けないため build_ingest 側で required 扱い（失敗時は停止）。
+
+usage(単体テスト): fact_price.py
 """
 from __future__ import annotations
+import urllib.request, json, datetime
 
-TROY_OUNCE_G = 31.1035  # 1 troy oz = 31.1035 g
+TROY_OUNCE_G = 31.1035
+GOLD_SYMBOL = "GC=F"   # COMEX金先物。ほぼスポットXAU/USD
+FX_SYMBOL = "JPY=X"    # USD/JPY
 
 def jpy_per_gram(xau_usd: float, usd_jpy: float) -> float:
-    """円/g = XAU/USD × USD/JPY ÷ 31.1035"""
     return xau_usd * usd_jpy / TROY_OUNCE_G
 
-def fetch(provider: str = "goldapi.io", api_key: str | None = None) -> dict:
-    """価格APIから XAU/USD・USD/JPY を取得して fact dict を返す（TODO: 実API接続）。
+def _yahoo_chart(symbol: str, rng: str = "max", interval: str = "1d") -> dict:
+    url = (f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+           f"?range={rng}&interval={interval}")
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    data = json.loads(urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "replace"))
+    return data["chart"]["result"][0]
 
-    戻り値の形は NEWS_INGEST.md の ingest.json .fact スキーマに一致させる:
-      {xau_usd, usd_jpy, jpy_per_gram, change_pct_1d, is_record_high, source, fetched_at}
-    """
-    raise NotImplementedError(
-        "無料枠API(goldapi.io等)へ接続。取得後 jpy_per_gram() で円/g算出、"
-        "過去N日高値と比較して is_record_high を判定する"
-    )
+def fetch() -> dict:
+    """ingest.json .fact スキーマの dict を返す。"""
+    gold = _yahoo_chart(GOLD_SYMBOL, rng="max")
+    fx = _yahoo_chart(FX_SYMBOL, rng="1mo")
+
+    g_closes = [c for c in gold["indicators"]["quote"][0]["close"] if c is not None]
+    g_highs = [h for h in gold["indicators"]["quote"][0]["high"] if h is not None]
+    xau_usd = gold["meta"].get("regularMarketPrice") or g_closes[-1]
+    usd_jpy = fx["meta"].get("regularMarketPrice") or \
+        [c for c in fx["indicators"]["quote"][0]["close"] if c is not None][-1]
+
+    change_pct_1d = round((g_closes[-1] - g_closes[-2]) / g_closes[-2] * 100, 2) if len(g_closes) >= 2 else 0.0
+    all_time_high = max(g_highs) if g_highs else xau_usd
+    is_record_high = xau_usd >= all_time_high * 0.999   # 0.1%許容で"最高値圏"
+
+    return {
+        "xau_usd": round(xau_usd, 2),
+        "usd_jpy": round(usd_jpy, 2),
+        "jpy_per_gram": round(jpy_per_gram(xau_usd, usd_jpy)),
+        "change_pct_1d": change_pct_1d,
+        "is_record_high": bool(is_record_high),
+        "all_time_high_usd": round(all_time_high, 2),
+        "source": f"yahoo:{GOLD_SYMBOL}+{FX_SYMBOL}",
+        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+    }
 
 if __name__ == "__main__":
-    # 算出ロジックだけ手元確認できるようにしておく
-    demo = jpy_per_gram(2700.0, 150.0)
-    print(f"demo 円/g (XAU/USD=2700, USD/JPY=150) = {demo:.0f}")
+    print(json.dumps(fetch(), ensure_ascii=False, indent=2))

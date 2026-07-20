@@ -26,3 +26,6 @@ __pycache__/
 # keep empty dirs
 !**/scripts/.gitkeep
 !**/out/.gitkeep
+
+# slot_fill の充填済みプロンプト（生成物）
+**/out/*.prompt.txt
