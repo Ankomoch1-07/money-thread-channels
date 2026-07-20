@@ -2,12 +2,16 @@
 
 ## 0. 依存
 ```bash
-brew install node python@3.12 ffmpeg          # ffmpeg は tts.py に必須
-cd core/remotion && npm i                       # Remotion 依存（初回のみ）
-python3 -m pip install requests matplotlib japanize-matplotlib pillow \
+brew install node python@3.12                   # ffmpegは不要（tts.pyは標準ライブラリwaveで結合、
+                                                #  Remotionはレンダ用ffmpegを内蔵）
+cd core/remotion && npm i                        # Remotion 依存（初回のみ）
+python3 -m pip install requests matplotlib japanize-matplotlib pillow pyyaml \
         google-api-python-client google-auth-oauthlib
+# VOICEVOX ENGINE を :50021 で起動（Docker もしくは VOICEVOXアプリ）
 docker run -d --name voicevox -p 50021:50021 voicevox/voicevox_engine:cpu-latest
 ```
+> tts.py は VOICEVOX(:50021) だけ必要。ffmpeg/ffprobe 依存は撤去済み（wave で結合・尺算出）。
+> 実測：VOICEVOX 0.25.2 で音声化→Remotionレンダで映像+音声トラック入りmp4を生成できることを確認（2026-07-20）。
 
 ## A. 本番パイプライン（音声つき・実レンダ）
 ```bash
