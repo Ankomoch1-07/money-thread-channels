@@ -36,7 +36,8 @@ echo "▶ 4/4 Remotionレンダ → $CHDIR/out/$EP.mp4"
 # 背景は毎回2本使う（OP/ED用＋中身用）。public/<ch>/bg/ の *.mp4 プールからランダムに2本選ぶ
 # （"格納しておくだけ"でランダム）。無ければ静止画にフォールバック。透明度はtheme.jsonのbgOpacity(既定0.8)。
 shopt -s nullglob
-BGS=( "$PUB"/bg/*.mp4 ); [ ${#BGS[@]} -eq 0 ] && BGS=( "$PUB"/bg/*.png )
+BGS=( "$PUB"/bg/*.mp4 "$PUB"/bg/*.mov "$PUB"/bg/*.webm )   # 動画は mp4/mov/webm を候補に
+[ ${#BGS[@]} -eq 0 ] && BGS=( "$PUB"/bg/*.png )
 OPED=""; MAIN=""
 N=${#BGS[@]}
 if [ "$N" -gt 0 ]; then
