@@ -3,13 +3,18 @@ import { Board, Timeline, Theme } from "./Board";
 
 // channel_03 の Root.tsx を移植。props に channel を追加し、
 // タイムライン(<channel>/<ep>/timeline.json)とテーマ(<channel>/theme.json)を読み込む。
-type Props = { channel: string; ep: string; timeline: Timeline; theme: Theme };
+type Props = { channel: string; ep: string; bg?: string; timeline: Timeline; theme: Theme };
 
-const calculateMetadata = async ({ props }: { props: { channel: string; ep: string } }) => {
+const calculateMetadata = async ({ props }: { props: { channel: string; ep: string; bg?: string } }) => {
   const [tl, theme]: [Timeline, Theme] = await Promise.all([
     fetch(staticFile(`${props.channel}/${props.ep}/timeline.json`)).then((r) => r.json()),
     fetch(staticFile(`${props.channel}/theme.json`)).then((r) => r.json()),
   ]);
+  // 背景選択：run.shが渡した props.bg を最優先。無ければ theme.bgs から ep名シードで決定論的に1本。
+  // Math.random は使わない（フレーム毎再実行でチラつくため）。
+  const bgs = theme.bgs && theme.bgs.length ? theme.bgs : [theme.bg];
+  const seed = (props.ep || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  theme.bg = props.bg || bgs[seed % bgs.length];
   const last = tl.segments[tl.segments.length - 1];
   return {
     durationInFrames: last ? last.start + last.dur : 300,

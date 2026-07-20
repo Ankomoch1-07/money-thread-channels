@@ -2,6 +2,9 @@
   "_note": "channel_03のBoard.tsxハードコード(CHARA色/背景)とcheck_assets.pyのSPEAKER_DEFAULT(話者→既定素材)をチャンネル別に外出ししたもの。casting流用なのでキャラ色はchannel_03を踏襲、背景とタイトル色をゴールド基調に。",
   "accent": "#D4AF37",
   "bg": "bg/gold.png",
+  "bgs": ["bg/gold.png"],
+  "bgOpacity": 0.8,
+  "_bg_note": "背景は core/remotion/public/channel_04_gold/bg/ に gold_01.mp4, gold_02.mp4 … を格納すればrun.shが動画ごとにランダム選択。bgsはstudio/still用の予備リスト。bgOpacity=透明度(0.8=80%不透明)。",
   "titleBg": "rgba(30,24,10,.92)",
   "titleColor": "#F5E6B3",
   "chara": {

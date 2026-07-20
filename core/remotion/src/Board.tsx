@@ -10,7 +10,8 @@ export type Seg = {
 export type Timeline = { fps: number; title?: string; segments: Seg[] };
 export type Chara = Record<string, { color: string; img: string }>;
 export type Theme = {
-  bg: string; titleBg?: string; titleColor?: string; chara: Chara; narrator?: string;
+  bg: string; bgs?: string[]; bgOpacity?: number;
+  titleBg?: string; titleColor?: string; chara: Chara; narrator?: string;
 };
 
 // channel_03 の Board.tsx を移植。ハードコードだった CHARA(キャラ色/素材)・背景・タイトル色を
@@ -26,11 +27,17 @@ export const Board: React.FC<{ channel: string; ep: string; timeline: Timeline; 
   const visible = segs.slice(Math.max(0, idx - 2), idx + 1); // 直近3レスを左上に積む
   const imgKey = cur?.img ?? theme.chara[cur?.name ?? ""]?.img;
   const bgIsVideo = /\.(mp4|webm|mov)$/i.test(theme.bg);
-  const bgStyle = { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" } as const;
+  // 透明度80%(=bgOpacity 0.8)で暗ベースに重ね、前景の吹き出し/文字を読みやすく
+  const bgStyle = {
+    position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+    opacity: theme.bgOpacity ?? 0.8,
+  } as const;
 
   return (
     <AbsoluteFill style={{ fontFamily: "sans-serif" }}>
-      {/* 背景：チャンネル別素材（動画 public/<channel>/bg/gold.mp4 / 静止画プレースホルダ .png の両対応） */}
+      {/* 暗ベース（背景動画を透過表示する土台） */}
+      <AbsoluteFill style={{ background: "#0c0a05" }} />
+      {/* 背景：run.shが bg/*.mp4 から選んだ素材（動画/静止画 両対応） */}
       {bgIsVideo ? (
         <OffthreadVideo src={staticFile(`${channel}/${theme.bg}`)} muted loop style={bgStyle} />
       ) : (

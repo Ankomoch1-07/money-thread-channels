@@ -33,8 +33,17 @@ cp "$CHDIR/theme.json"        "$PUB/theme.json"          # テーマ(色/背景/
 #     $PUB/bg/gold.mp4           … 背景動画（theme.json の bg）
 
 echo "▶ 4/4 Remotionレンダ → $CHDIR/out/$EP.mp4"
+# 背景を public/<ch>/bg/ に置いた *.mp4 からランダム選択（"格納しておくだけ"でランダム）。
+# 無ければ静止画にフォールバック。透明度はtheme.jsonのbgOpacity(既定0.8)。
+shopt -s nullglob
+BGS=( "$PUB"/bg/*.mp4 ); [ ${#BGS[@]} -eq 0 ] && BGS=( "$PUB"/bg/*.png )
+BGREL=""
+if [ ${#BGS[@]} -gt 0 ]; then
+  SEL="${BGS[$RANDOM % ${#BGS[@]}]}"; BGREL="bg/$(basename "$SEL")"
+  echo "  背景ランダム選択: $BGREL（候補${#BGS[@]}本）"
+fi
 ( cd "$ROOT/core/remotion" && npx remotion render src/index.ts Main "../../channels/$CH/out/$EP.mp4" \
-    --props="{\"channel\":\"$CH\",\"ep\":\"$EP\"}" )
+    --props="{\"channel\":\"$CH\",\"ep\":\"$EP\",\"bg\":\"$BGREL\"}" )
 
 echo "✅ 完成: channels/$CH/out/$EP.mp4"
 echo "   → 人手ゲート: [要ファクトチェック]数値・冒頭30秒・サムネ(vidIQ)を確認し upload.py で予約投稿"
