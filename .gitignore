@@ -1,0 +1,23 @@
+# build artifacts
+**/out/*.mp4
+**/out/*.wav
+**/out/timeline.json
+**/out/graph/
+core/remotion/node_modules/
+node_modules/
+
+# secrets / auth
+**/client_secret.json
+**/token.json
+.env
+
+# ingest runtime output (regenerated)
+channels/*/ingest.json
+
+# python
+__pycache__/
+*.pyc
+
+# keep empty dirs
+!**/scripts/.gitkeep
+!**/out/.gitkeep

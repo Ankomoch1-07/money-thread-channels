@@ -1,0 +1,13 @@
+{
+  "name": "money-thread-channels",
+  "private": true,
+  "version": "0.1.0",
+  "description": "2chマネースレ系 自動生成チャンネルのモノレポ（共通コア＋チャンネル別）",
+  "workspaces": [
+    "core/remotion"
+  ],
+  "scripts": {
+    "ingest": "python3 core/news-ingest/build_ingest.py",
+    "qa": "python3 core/build/qa.py"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "channel_04_gold",
+  "title": "2chゴールドスレ",
+  "format": "2ch_money_thread",
+  "audience": "hybrid",
+  "theme": { "base": "gold", "accent": "#D4AF37" },
+  "script": {
+    "promptFile": "script_prompt.md",
+    "segments": ["hook", "conflict", "reveal_edu", "real_demand"],
+    "targetMinutes": 30,
+    "minChars": 10500,
+    "maxChars": 12000,
+    "ng": ["必ず上がる", "儲かる", "絶対安全", "今すぐ買え", "特定の地金商・ETF銘柄の推奨"]
+  },
+  "speakersFile": "speakers.json",
+  "sourcesFile": "sources.yaml",
+  "topicLedgerFile": "topic_ledger.json",
+  "priceUnits": { "primary": "XAU/USD", "secondary": "JPY/g" }
+}

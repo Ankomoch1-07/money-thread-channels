@@ -1,0 +1,7 @@
+{
+  "_note": "いらすとや素材台帳。key → public配置するPNG。[IMG:key] は必ずここに登録された key のみ使う。金特化素材を要追加（実ファイル配置は別途）。",
+  "gold_bar": { "file": "gold_bar.png", "desc": "金塊", "status": "TODO_download" },
+  "money_shock_man": { "file": "money_shock_man.png", "desc": "お金でショックを受ける人", "status": "TODO_download" },
+  "chart_down": { "file": "chart_down.png", "desc": "下落チャート", "status": "TODO_download" },
+  "balance_scale": { "file": "balance_scale.png", "desc": "天秤", "status": "TODO_download" }
+}

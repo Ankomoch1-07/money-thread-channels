@@ -1,0 +1,36 @@
+# channel_04_gold 時事ネタ収集ソース（news-ingest が読む）
+# 方針：fact=無料枠で検証 / flavor=ローンチから投入 / 日次
+lookbackHours: 24
+cadence: daily          # cron/GitHub Actions
+eventTriggerPct: 2.0    # 日次±2%超で追加生成（イベント駆動）
+topics: [gold_price, real_rate, usd_index, geopolitics, central_bank_gold]
+
+layers:
+  fact:
+    provider: goldapi.io      # まず無料枠。XAU/USD, USD/JPY を取得
+    required: true            # 唯一の必須層。落ちたら生成停止
+    compute_jpy_per_gram: true
+    cache: true               # 日次1リクエストで無料枠を節約
+    fallback: websearch       # 無料枠が尽きた/落ちた日は discovery(WebSearch) で拾う
+    # apiKeyEnv: GOLDAPI_KEY
+
+  reference:
+    keywords: [金, ゴールド, gold, XAU, 貴金属, 金価格]
+    rss:                      # TODO: 実URLを確定
+      - { id: reuters_markets, url: "" }
+      - { id: minkabu_gold,    url: "" }
+      - { id: investing_commodities, url: "" }
+
+  flavor:                     # ★ローンチから有効
+    enabled: true
+    prefer: matome_rss        # まとめサイトの公開RSSを優先（安定・合法配信）
+    extract: mood_only        # 雰囲気のみ。生レス・記事本文の転載は禁止（翻案専用）
+    sources:                  # TODO: 実URL/板を確定
+      - { type: matome_rss, id: kinyu_matome, url: "" }
+      - { type: 5ch, board: market, note: "read.cgiは低頻度+robots遵守" }
+
+  discovery:
+    web_queries:
+      - "金 価格 なぜ"
+      - "gold price today"
+      - "中央銀行 金 購入"
