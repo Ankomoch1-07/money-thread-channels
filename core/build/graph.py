@@ -1,58 +1,58 @@
 #!/usr/bin/env python3
-"""台本の [GRAPH:...] 行を拾って解説グラフPNGを channels/<channel>/out/graph/NN.png に出力。
-
-channel_03 版はFX例(2%/10%リスク)を固定描画していたが、コメントにあった
-[GRAPH: type=bar; x=..; y=..; ylabel=..; title=..] のパースを実装して汎用化した。
-構造化データが無い [GRAPH: 自由記述] はタイトルカード(説明文の見出し)として描画する。
-実データ(fact/reference由来)は slot_fill が [GRAPH: ...] に埋め込む想定。
-
+"""台本の [GRAPH: タイトル | ラベル:値, ラベル:値, ... | Y軸ラベル] を解析し棒グラフPNGを
+channels/<channel>/out/graph/NN.png に出力。データ無しの [GRAPH: 説明] はフォールバック簡易表示。
+channel_03(fx-2ch)版を <channel> 引数対応へ移植。
 usage: graph.py <channel> <script.txt>
 """
 import re, sys, os, pathlib
+import matplotlib
+matplotlib.use("Agg")
+try:
+    import japanize_matplotlib  # noqa: F401
+except Exception:
+    matplotlib.rcParams["font.family"] = [
+        "Noto Sans CJK JP", "IPAexGothic", "Hiragino Sans", "TakaoPGothic", "sans-serif"]
 import matplotlib.pyplot as plt
-import japanize_matplotlib  # noqa: F401  (日本語フォント有効化)
 
-def parse_kv(body: str) -> dict:
-    """'type=bar; x=a,b; y=1,2; ylabel=..; title=..' → dict"""
-    out = {}
-    for part in body.split(";"):
-        if "=" not in part:
-            continue
-        k, v = part.split("=", 1)
-        out[k.strip()] = v.strip()
-    return out
+def parse(cue):
+    body = re.sub(r"^\[GRAPH:?", "", cue).strip().rstrip("]").strip()
+    parts = [p.strip() for p in body.split("|")]
+    title = parts[0] if parts else ""
+    labels, values = [], []
+    if len(parts) >= 2:
+        for pair in parts[1].split(","):
+            if ":" in pair:
+                k, v = pair.rsplit(":", 1)
+                labels.append(k.strip())
+                try:
+                    values.append(float(re.sub(r"[^0-9.\-]", "", v)))
+                except ValueError:
+                    values.append(0.0)
+    ylabel = parts[2] if len(parts) >= 3 else ""
+    return title, labels, values, ylabel
 
-def draw_bar(ax, kv):
-    x = [s.strip() for s in kv.get("x", "").split(",") if s.strip()]
-    y = [float(s) for s in kv.get("y", "").split(",") if s.strip()]
-    ax.bar(x, y, color=["#c9a227", "#8a1b1b", "#0b63c4", "#1b8a3a"][: len(x)] or None)
-    ax.set_ylabel(kv.get("ylabel", ""), fontsize=20)
-    for i, v in enumerate(y):
-        ax.text(i, v, f"{v:g}", ha="center", va="bottom", fontsize=24)
-
-def draw_title_card(ax, text):
-    ax.axis("off")
-    ax.text(0.5, 0.5, text, ha="center", va="center", fontsize=34, wrap=True)
-
-def main(channel: str, script_path: str) -> int:
+def main(channel, script_path):
     root = pathlib.Path(__file__).resolve().parents[2]
     gdir = root / "channels" / channel / "out" / "graph"
     gdir.mkdir(parents=True, exist_ok=True)
-    cues = [l.strip() for l in open(script_path, encoding="utf-8")
-            if l.strip().startswith("[GRAPH")]
-
+    cues = [l.strip() for l in open(script_path, encoding="utf-8") if l.strip().startswith("[GRAPH")]
     for idx, c in enumerate(cues):
-        body = re.sub(r"^\[GRAPH:?", "", c).strip("] \n")
-        kv = parse_kv(body)
+        title, labels, values, ylabel = parse(c)
+        if not labels:
+            labels, values, ylabel = ["データA", "データB"], [50, 50], ""
         fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
-        if kv.get("type") == "bar" and kv.get("x") and kv.get("y"):
-            draw_bar(ax, kv)
-            ax.set_title(kv.get("title", ""), fontsize=28)
-        else:
-            draw_title_card(ax, body)   # 自由記述はタイトルカード
+        colors = ["#2e7d32"] + ["#c62828"] * (len(labels) - 1)
+        ax.bar(labels, values, color=colors[:len(labels)])
+        ax.set_title(title, fontsize=30, pad=20)
+        if ylabel:
+            ax.set_ylabel(ylabel, fontsize=22)
+        top = max(values) if values else 100
+        ax.set_ylim(0, top * 1.25)
+        for i, v in enumerate(values):
+            ax.text(i, v + top * 0.02, f"{v:g}", ha="center", fontsize=28, fontweight="bold")
+        ax.tick_params(labelsize=22)
         fig.savefig(gdir / f"{idx:02d}.png", bbox_inches="tight")
         plt.close(fig)
-
     print(f"{len(cues)} graphs -> {gdir}/")
     return 0
 
