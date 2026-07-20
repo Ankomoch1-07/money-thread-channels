@@ -68,10 +68,25 @@ def check(text: str) -> list:
 
     return fails
 
+def check_images(channel: str, text: str) -> list:
+    """B: [IMG:key] が台帳に存在するか＋いらすとや使用点数(≤20)。"""
+    import json as _json
+    root = pathlib.Path(__file__).resolve().parents[2]
+    man = root / "channels" / channel / "assets" / "irasutoya.json"
+    keys = {a["key"] for a in _json.loads(man.read_text(encoding="utf-8"))["assets"]} if man.exists() else set()
+    used = re.findall(r"\[IMG:\s*([\w-]+)\s*\]", text)
+    fails = []
+    for k in sorted(set(used)):
+        if k not in keys:
+            fails.append(f"B: 台帳に無い[IMG:{k}]（存在するkeyに直すか台帳へ登録）")
+    if len(set(used)) > 20:
+        fails.append(f"B: いらすとや使用 {len(set(used))}点 > 20（商用ルール。減らす）")
+    return fails
+
 def main(argv) -> int:
     channel = argv[0]
     text = load_script(channel, argv[1], argv[2:])
-    fails = check(text)
+    fails = check(text) + check_images(channel, text)
     if fails:
         print("QA: 要修正")
         for f in fails: print("  -", f)

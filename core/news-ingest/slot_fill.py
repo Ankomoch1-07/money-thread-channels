@@ -46,8 +46,21 @@ COMMON_RULES = (
     "- 数値は必ず上の fact 値を使い、直後に [要ファクトチェック] を付ける。\n"
     "- 「最高値更新か」が「いいえ」の場合、「最高値更新」と書かない（事実に反するため）。\n"
     "- 各掛け合いブロックは最低8〜12レス。薄く終わらせない。\n"
+    "- [IMG:key] は下記『使えるいらすとや素材』の key だけを使う（存在しないkeyを創作しない）。\n"
+    "  場面の感情・話題に合う素材をレス直前に積極的に置く。ただし1動画で使うのは20点以内。\n"
     "- 出力は台本本文（【話者名】…）のみ。前置き・後書き・説明文は書かない。\n"
 )
+
+def build_catalog(chdir: pathlib.Path) -> str:
+    """台帳 irasutoya.json を『使えるいらすとや素材』一覧としてLLMへ渡す文字列に。"""
+    m = json.loads((chdir / "assets" / "irasutoya.json").read_text(encoding="utf-8"))
+    groups = {}
+    for a in m["assets"]:
+        groups.setdefault(a.get("group", "その他"), []).append(f"{a['key']}({a['desc']})")
+    lines = ["## 使えるいらすとや素材（[IMG:key] はこのkeyだけ）"]
+    for g, items in groups.items():
+        lines.append(f"- {g}: " + " / ".join(items))
+    return "\n".join(lines)
 
 # 章分割マルチパス（17ブロックを3部に分割 → 各部opusで生成し結合 → 単発の頭打ちを回避し30分尺に到達）
 PASSES = [
@@ -90,7 +103,7 @@ def main(channel: str, ep: str) -> int:
         else {"generated": []}
 
     params = build_params(ingest, ledger)
-    base = prompt_spec + "\n\n" + params
+    base = prompt_spec + "\n\n" + params + "\n\n" + build_catalog(chdir)
     passes = int(os.environ.get("INGEST_PASSES", "3"))   # 既定3部マルチパス。1で単発
 
     if not os.environ.get("ANTHROPIC_API_KEY"):

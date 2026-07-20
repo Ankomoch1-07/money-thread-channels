@@ -1,15 +1,46 @@
 {
-  "_note": "いらすとや素材台帳。structure は channel_03 と同じ {\"assets\":[{key,...}]}。[IMG:key] と 話者デフォルト(theme.json chara.img) は必ずここに登録。実PNGは core/remotion/public/channel_04_gold/irasutoya/<key>.png に配置（未配置なら check_assets が指摘）。",
+  "_note": "いらすとや素材台帳。key→PNG(core/remotion/public/channel_04_gold/irasutoya/<key>.png)。台本の[IMG:key]と話者デフォルト(theme.json chara.img)は必ずここに登録。台帳は大きくてよい（使う分だけ実PNGを用意すればcheck_assetsは通る＝配役6+実際に使うkeyのみ必須）。1動画での使用は20点以内（いらすとや商用ルール）。",
   "assets": [
-    { "key": "narrator",       "desc": "ナレーター（四国めたん枠）", "status": "TODO_download" },
-    { "key": "man_pc",         "desc": "PCの前の男性（ワイ/ずんだもん枠）", "status": "TODO_download" },
-    { "key": "ojisan_talk",    "desc": "語るおじさん（先輩/玄野枠）", "status": "TODO_download" },
-    { "key": "man_yaruki",     "desc": "やる気の男性（逆張りニキ枠）", "status": "TODO_download" },
-    { "key": "woman_setsumei", "desc": "説明する女性（冷静ニキ枠）", "status": "TODO_download" },
-    { "key": "man_hatena",     "desc": "はてなの男性（新人ニキ枠）", "status": "TODO_download" },
-    { "key": "gold_bar",       "desc": "金塊", "status": "TODO_download" },
-    { "key": "money_shock_man","desc": "お金でショックを受ける人", "status": "TODO_download" },
-    { "key": "chart_down",     "desc": "下落チャート", "status": "TODO_download" },
-    { "key": "balance_scale",  "desc": "天秤", "status": "TODO_download" }
+    { "key": "narrator",        "desc": "ナレーター向け人物（四国めたん枠）", "group": "配役" },
+    { "key": "man_pc",          "desc": "PCの前の男性（ずんだもん/ワイ枠）", "group": "配役" },
+    { "key": "ojisan_talk",     "desc": "語るおじさん（玄野/先輩枠）", "group": "配役" },
+    { "key": "man_yaruki",      "desc": "やる気の男性（青山/逆張り枠）", "group": "配役" },
+    { "key": "woman_setsumei",  "desc": "説明する女性（九州そら/冷静枠）", "group": "配役" },
+    { "key": "man_hatena",      "desc": "はてなの男性（春日部/新人枠）", "group": "配役" },
+
+    { "key": "gold_bar",        "desc": "金塊", "group": "金オブジェ" },
+    { "key": "gold_coin",       "desc": "金貨", "group": "金オブジェ" },
+    { "key": "gold_accessory",  "desc": "金の装飾品・アクセサリー", "group": "金オブジェ" },
+    { "key": "kinko_safe",      "desc": "金庫", "group": "金オブジェ" },
+
+    { "key": "chart_up",        "desc": "上昇チャート", "group": "相場" },
+    { "key": "chart_down",      "desc": "下落チャート", "group": "相場" },
+    { "key": "chart_flat",      "desc": "横ばい・膠着チャート", "group": "相場" },
+    { "key": "stock_board",     "desc": "株価ボード・電光掲示", "group": "相場" },
+    { "key": "money_graph",     "desc": "お金と上昇グラフ", "group": "相場" },
+
+    { "key": "dollar_bill",     "desc": "ドル札", "group": "マクロ" },
+    { "key": "yen_money",       "desc": "日本円・お札", "group": "マクロ" },
+    { "key": "interest_rate",   "desc": "金利・パーセントのイメージ", "group": "マクロ" },
+    { "key": "central_bank",    "desc": "中央銀行・銀行の建物", "group": "マクロ" },
+    { "key": "earth_globe",     "desc": "地球儀（世界情勢・地政学）", "group": "マクロ" },
+
+    { "key": "bitcoin",         "desc": "ビットコイン", "group": "対立資産" },
+    { "key": "usa_stock",       "desc": "アメリカ・米国株のイメージ", "group": "対立資産" },
+
+    { "key": "money_shock_man", "desc": "お金でショックを受ける人", "group": "感情" },
+    { "key": "komatta_man",     "desc": "困っている男性", "group": "感情" },
+    { "key": "naku_koukai",     "desc": "後悔して泣く人", "group": "感情" },
+    { "key": "odoroku",         "desc": "驚く人", "group": "感情" },
+    { "key": "doya_kao",        "desc": "ドヤ顔の人", "group": "感情" },
+    { "key": "atama_kakaeru",   "desc": "頭を抱える人", "group": "感情" },
+    { "key": "gutspose",        "desc": "ガッツポーズの人", "group": "感情" },
+    { "key": "balance_scale",   "desc": "天秤（バランス）", "group": "感情" },
+
+    { "key": "tsumitate",       "desc": "コツコツ積立・貯金", "group": "実需" },
+    { "key": "piggy_bank",      "desc": "貯金箱", "group": "実需" },
+    { "key": "tax_shinkoku",    "desc": "確定申告・税金", "group": "実需" },
+    { "key": "rougo_couple",    "desc": "老後の夫婦", "group": "実需" },
+    { "key": "kaimono",         "desc": "買い物・購入する人", "group": "実需" }
   ]
 }
