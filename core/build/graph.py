@@ -1,19 +1,60 @@
 #!/usr/bin/env python3
-"""[GRAPH: 内容] を matplotlib で画像化。
+"""台本の [GRAPH:...] 行を拾って解説グラフPNGを channels/<channel>/out/graph/NN.png に出力。
+
+channel_03 版はFX例(2%/10%リスク)を固定描画していたが、コメントにあった
+[GRAPH: type=bar; x=..; y=..; ylabel=..; title=..] のパースを実装して汎用化した。
+構造化データが無い [GRAPH: 自由記述] はタイトルカード(説明文の見出し)として描画する。
+実データ(fact/reference由来)は slot_fill が [GRAPH: ...] に埋め込む想定。
 
 usage: graph.py <channel> <script.txt>
-
-channel_03 の build/graph.py を移植（TODO）。
-- 台本内の [GRAPH: 内容] を全抽出し、内容に応じた図を生成
-- channels/<channel>/out/graph/NN.png として保存（run.sh が public へ配置）
-- 金特化の想定グラフ：実質金利 vs 金価格 / 中央銀行金購入量 / 長期チャート /
-  一括 vs 積立の平均取得単価 など。データは fact/reference 由来を差し込む
-- japanize-matplotlib で日本語ラベル対応
 """
-import sys
+import re, sys, os, pathlib
+import matplotlib.pyplot as plt
+import japanize_matplotlib  # noqa: F401  (日本語フォント有効化)
+
+def parse_kv(body: str) -> dict:
+    """'type=bar; x=a,b; y=1,2; ylabel=..; title=..' → dict"""
+    out = {}
+    for part in body.split(";"):
+        if "=" not in part:
+            continue
+        k, v = part.split("=", 1)
+        out[k.strip()] = v.strip()
+    return out
+
+def draw_bar(ax, kv):
+    x = [s.strip() for s in kv.get("x", "").split(",") if s.strip()]
+    y = [float(s) for s in kv.get("y", "").split(",") if s.strip()]
+    ax.bar(x, y, color=["#c9a227", "#8a1b1b", "#0b63c4", "#1b8a3a"][: len(x)] or None)
+    ax.set_ylabel(kv.get("ylabel", ""), fontsize=20)
+    for i, v in enumerate(y):
+        ax.text(i, v, f"{v:g}", ha="center", va="bottom", fontsize=24)
+
+def draw_title_card(ax, text):
+    ax.axis("off")
+    ax.text(0.5, 0.5, text, ha="center", va="center", fontsize=34, wrap=True)
 
 def main(channel: str, script_path: str) -> int:
-    raise NotImplementedError("channel_03/build/graph.py を <channel> 対応で移植する")
+    root = pathlib.Path(__file__).resolve().parents[2]
+    gdir = root / "channels" / channel / "out" / "graph"
+    gdir.mkdir(parents=True, exist_ok=True)
+    cues = [l.strip() for l in open(script_path, encoding="utf-8")
+            if l.strip().startswith("[GRAPH")]
+
+    for idx, c in enumerate(cues):
+        body = re.sub(r"^\[GRAPH:?", "", c).strip("] \n")
+        kv = parse_kv(body)
+        fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
+        if kv.get("type") == "bar" and kv.get("x") and kv.get("y"):
+            draw_bar(ax, kv)
+            ax.set_title(kv.get("title", ""), fontsize=28)
+        else:
+            draw_title_card(ax, body)   # 自由記述はタイトルカード
+        fig.savefig(gdir / f"{idx:02d}.png", bbox_inches="tight")
+        plt.close(fig)
+
+    print(f"{len(cues)} graphs -> {gdir}/")
+    return 0
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

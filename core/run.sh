@@ -21,12 +21,16 @@ echo "▶ 2/4 解説グラフ生成"
 python3 "$ROOT/core/build/graph.py"        "$CH" "$SCRIPT"
 
 echo "▶ 3/4 素材をRemotionのpublicへ配置"
-DEST="$ROOT/core/remotion/public/$CH/$EP"
+PUB="$ROOT/core/remotion/public/$CH"
+DEST="$PUB/$EP"
 mkdir -p "$DEST/graph"
 cp "$CHDIR/out/voice.wav"     "$DEST/voice.wav"
 cp "$CHDIR/out/timeline.json" "$DEST/timeline.json"
 cp "$CHDIR/out/graph/"*.png   "$DEST/graph/" 2>/dev/null || true
-# チャンネル固有のいらすとや素材・テーマは channels/$CH/assets 側から供給する想定
+cp "$CHDIR/theme.json"        "$PUB/theme.json"          # テーマ(色/背景/配役)
+# ※ 静的素材は初回に一度だけ配置しておく（使い回し）:
+#     $PUB/irasutoya/<key>.png   … いらすとや（台帳 assets/irasutoya.json の key）
+#     $PUB/bg/gold.mp4           … 背景動画（theme.json の bg）
 
 echo "▶ 4/4 Remotionレンダ → $CHDIR/out/$EP.mp4"
 ( cd "$ROOT/core/remotion" && npx remotion render src/index.ts Main "../../channels/$CH/out/$EP.mp4" \

@@ -1,7 +1,15 @@
 {
-  "_note": "いらすとや素材台帳。key → public配置するPNG。[IMG:key] は必ずここに登録された key のみ使う。金特化素材を要追加（実ファイル配置は別途）。",
-  "gold_bar": { "file": "gold_bar.png", "desc": "金塊", "status": "TODO_download" },
-  "money_shock_man": { "file": "money_shock_man.png", "desc": "お金でショックを受ける人", "status": "TODO_download" },
-  "chart_down": { "file": "chart_down.png", "desc": "下落チャート", "status": "TODO_download" },
-  "balance_scale": { "file": "balance_scale.png", "desc": "天秤", "status": "TODO_download" }
+  "_note": "いらすとや素材台帳。structure は channel_03 と同じ {\"assets\":[{key,...}]}。[IMG:key] と 話者デフォルト(theme.json chara.img) は必ずここに登録。実PNGは core/remotion/public/channel_04_gold/irasutoya/<key>.png に配置（未配置なら check_assets が指摘）。",
+  "assets": [
+    { "key": "narrator",       "desc": "ナレーター（四国めたん枠）", "status": "TODO_download" },
+    { "key": "man_pc",         "desc": "PCの前の男性（ワイ/ずんだもん枠）", "status": "TODO_download" },
+    { "key": "ojisan_talk",    "desc": "語るおじさん（先輩/玄野枠）", "status": "TODO_download" },
+    { "key": "man_yaruki",     "desc": "やる気の男性（逆張りニキ枠）", "status": "TODO_download" },
+    { "key": "woman_setsumei", "desc": "説明する女性（冷静ニキ枠）", "status": "TODO_download" },
+    { "key": "man_hatena",     "desc": "はてなの男性（新人ニキ枠）", "status": "TODO_download" },
+    { "key": "gold_bar",       "desc": "金塊", "status": "TODO_download" },
+    { "key": "money_shock_man","desc": "お金でショックを受ける人", "status": "TODO_download" },
+    { "key": "chart_down",     "desc": "下落チャート", "status": "TODO_download" },
+    { "key": "balance_scale",  "desc": "天秤", "status": "TODO_download" }
+  ]
 }

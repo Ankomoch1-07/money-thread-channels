@@ -1,9 +1,8 @@
 {
-  "_note": "話者→VOICEVOX話者ID のマッピング。channel_03流用。IDは curl :50021/speakers で実値に要調整。",
-  "ナレーター": { "character": "四国めたん", "voicevox_speaker": null, "style": "丁寧語・落ち着き" },
-  "ずんだもん": { "character": "ずんだもん", "voicevox_speaker": null, "style": "自虐・関西弁・一人称ワイ/俺（のだ語尾は使わない）" },
-  "玄野武宏":   { "character": "玄野武宏", "voicevox_speaker": null, "style": "ベテラン・断言役（金は保険）" },
-  "青山龍星":   { "character": "青山龍星", "voicevox_speaker": null, "style": "逆張り・金ゴミ論・contrarian" },
-  "九州そら":   { "character": "九州そら", "voicevox_speaker": null, "style": "冷静・数字と理屈で諭す" },
-  "春日部つむぎ": { "character": "春日部つむぎ", "voicevox_speaker": null, "style": "素朴な質問役・登場任意" }
+  "四国めたん": 2,
+  "ずんだもん": 3,
+  "玄野武宏": 11,
+  "青山龍星": 13,
+  "九州そら": 16,
+  "春日部つむぎ": 8
 }

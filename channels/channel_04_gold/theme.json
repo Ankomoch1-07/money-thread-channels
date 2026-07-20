@@ -1,0 +1,16 @@
+{
+  "_note": "channel_03のBoard.tsxハードコード(CHARA色/背景)とcheck_assets.pyのSPEAKER_DEFAULT(話者→既定素材)をチャンネル別に外出ししたもの。casting流用なのでキャラ色はchannel_03を踏襲、背景とタイトル色をゴールド基調に。",
+  "accent": "#D4AF37",
+  "bg": "bg/gold.mp4",
+  "titleBg": "rgba(30,24,10,.92)",
+  "titleColor": "#F5E6B3",
+  "chara": {
+    "ずんだもん":   { "color": "#c26a00", "img": "man_pc" },
+    "玄野武宏":     { "color": "#b3261e", "img": "ojisan_talk" },
+    "青山龍星":     { "color": "#1b8a3a", "img": "man_yaruki" },
+    "九州そら":     { "color": "#0b63c4", "img": "woman_setsumei" },
+    "春日部つむぎ": { "color": "#8a1b7a", "img": "man_hatena" },
+    "四国めたん":   { "color": "#8a6d1f", "img": "narrator" }
+  },
+  "narrator": "四国めたん"
+}
