@@ -35,3 +35,7 @@ channels/*/scripts/*.txt
 !channels/*/scripts/ep_test01.txt
 # topic_ledgerは実行時状態
 channels/*/topic_ledger.json
+
+# out/配下は全て生成物（voice.wav/wav/timeline/graph/subs/prompt）
+channels/*/out/*
+!channels/*/out/.gitkeep
