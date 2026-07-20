@@ -2,18 +2,38 @@
   "_note": "channel_03のBoard.tsxハードコード(CHARA色/背景)とcheck_assets.pyのSPEAKER_DEFAULT(話者→既定素材)をチャンネル別に外出ししたもの。casting流用なのでキャラ色はchannel_03を踏襲、背景とタイトル色をゴールド基調に。",
   "accent": "#D4AF37",
   "bg": "bg/gold.png",
-  "bgs": ["bg/gold.png"],
+  "bgs": [
+    "bg/gold.png"
+  ],
   "bgOpacity": 0.8,
-  "_bg_note": "背景は core/remotion/public/channel_04_gold/bg/ に gold_01.mp4, gold_02.mp4 … を格納すればrun.shが動画ごとにランダム選択。bgsはstudio/still用の予備リスト。bgOpacity=透明度(0.8=80%不透明)。",
+  "_bg_note": "背景は毎回2本使う(OP/ED用+中身用)。core/remotion/public/channel_04_gold/bg/ に *.mp4 を複数格納すればrun.shがOP/ED用と中身用に別々の1本をランダム選択。OP=冒頭のナレーター導入,ED=末尾の結論CTA,中身=その間。bgsはstudio/still用予備。bgOpacity=透明度(0.8)。",
   "titleBg": "rgba(30,24,10,.92)",
   "titleColor": "#F5E6B3",
   "chara": {
-    "ずんだもん":   { "color": "#c26a00", "img": "man_pc" },
-    "玄野武宏":     { "color": "#b3261e", "img": "ojisan_talk" },
-    "青山龍星":     { "color": "#1b8a3a", "img": "man_yaruki" },
-    "九州そら":     { "color": "#0b63c4", "img": "woman_setsumei" },
-    "春日部つむぎ": { "color": "#8a1b7a", "img": "man_hatena" },
-    "四国めたん":   { "color": "#8a6d1f", "img": "narrator" }
+    "ずんだもん": {
+      "color": "#c26a00",
+      "img": "man_pc"
+    },
+    "玄野武宏": {
+      "color": "#b3261e",
+      "img": "ojisan_talk"
+    },
+    "青山龍星": {
+      "color": "#1b8a3a",
+      "img": "man_yaruki"
+    },
+    "九州そら": {
+      "color": "#0b63c4",
+      "img": "woman_setsumei"
+    },
+    "春日部つむぎ": {
+      "color": "#8a1b7a",
+      "img": "man_hatena"
+    },
+    "四国めたん": {
+      "color": "#8a6d1f",
+      "img": "narrator"
+    }
   },
   "narrator": "四国めたん"
 }

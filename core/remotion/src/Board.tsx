@@ -10,7 +10,7 @@ export type Seg = {
 export type Timeline = { fps: number; title?: string; segments: Seg[] };
 export type Chara = Record<string, { color: string; img: string }>;
 export type Theme = {
-  bg: string; bgs?: string[]; bgOpacity?: number;
+  bg: string; bgs?: string[]; bgOpEd?: string; bgMain?: string; bgOpacity?: number;
   titleBg?: string; titleColor?: string; chara: Chara; narrator?: string;
 };
 
@@ -26,7 +26,16 @@ export const Board: React.FC<{ channel: string; ep: string; timeline: Timeline; 
   const cur = segs[idx] ?? segs[segs.length - 1];
   const visible = segs.slice(Math.max(0, idx - 2), idx + 1); // 直近3レスを左上に積む
   const imgKey = cur?.img ?? theme.chara[cur?.name ?? ""]?.img;
-  const bgIsVideo = /\.(mp4|webm|mov)$/i.test(theme.bg);
+  // 背景をOP/ED（冒頭のナレーター導入＋末尾の結論CTA）と中身で切替（channel_03仕様）。
+  // OP = 冒頭から最初の非ナレーター発話まで、ED = 最後の非ナレーター発話以降。
+  const narr = theme.narrator ?? "四国めたん";
+  let opEnd = 0;
+  for (const s of segs) { if (s.name !== narr) { opEnd = s.start; break; } }
+  let edStart = segs.length ? segs[segs.length - 1].start + segs[segs.length - 1].dur : 0;
+  for (let k = segs.length - 1; k >= 0; k--) { if (segs[k].name !== narr) { edStart = segs[k].start + segs[k].dur; break; } }
+  const inOpEd = frame < opEnd || frame >= edStart;
+  const bgFile = (inOpEd ? theme.bgOpEd : theme.bgMain) ?? theme.bg;
+  const bgIsVideo = /\.(mp4|webm|mov)$/i.test(bgFile);
   // 透明度80%(=bgOpacity 0.8)で暗ベースに重ね、前景の吹き出し/文字を読みやすく
   const bgStyle = {
     position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
@@ -37,11 +46,11 @@ export const Board: React.FC<{ channel: string; ep: string; timeline: Timeline; 
     <AbsoluteFill style={{ fontFamily: "sans-serif" }}>
       {/* 暗ベース（背景動画を透過表示する土台） */}
       <AbsoluteFill style={{ background: "#0c0a05" }} />
-      {/* 背景：run.shが bg/*.mp4 から選んだ素材（動画/静止画 両対応） */}
+      {/* 背景：OP/ED用と中身用の2本を切替（動画/静止画 両対応） */}
       {bgIsVideo ? (
-        <OffthreadVideo src={staticFile(`${channel}/${theme.bg}`)} muted loop style={bgStyle} />
+        <OffthreadVideo key={bgFile} src={staticFile(`${channel}/${bgFile}`)} muted loop style={bgStyle} />
       ) : (
-        <Img src={staticFile(`${channel}/${theme.bg}`)} style={bgStyle} />
+        <Img key={bgFile} src={staticFile(`${channel}/${bgFile}`)} style={bgStyle} />
       )}
       <Audio src={staticFile(`${channel}/${ep}/voice.wav`)} />
 
