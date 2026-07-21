@@ -6,9 +6,18 @@
 core/remotion/node_modules/
 node_modules/
 
-# Remotion public は生成物（プレースホルダ素材/run.shが配置したtheme・timeline・graph）。
-# 実素材/背景も含めコミットしない（procure or generate で再現）。
-core/remotion/public/*/
+# Remotion public: 静的素材(irasutoya/se/軽いbg動画≤30MB)はCIで使うので追跡する。
+# 生成物(per-ep staging=voice/timeline/graph)・theme・重い背景(>30MB)はローカルのみ。
+core/remotion/public/*/theme.json
+core/remotion/public/*/*/voice.wav
+core/remotion/public/*/*/timeline.json
+core/remotion/public/*/*/graph/
+core/remotion/public/*/bg/*.mov
+core/remotion/public/channel_04_gold/bg/gold_02.mp4
+core/remotion/public/channel_04_gold/bg/gold_03.mp4
+core/remotion/public/channel_04_gold/bg/gold_04.mp4
+core/remotion/public/channel_04_gold/bg/gold_05.mp4
+**/.DS_Store
 !core/remotion/public/.gitkeep
 
 # secrets / auth

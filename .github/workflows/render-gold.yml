@@ -1,0 +1,100 @@
+name: ゴールド動画をフル生成 (channel_04)
+
+# 手動起動：Actionsタブ →「ゴールド動画をフル生成」→「Run workflow」。
+# 台本生成→VOICEVOX音声化→グラフ→Remotionレンダ まで回して mp4 を作る。
+# ※ 30分尺のレンダはCIで30〜60分かかる（Actions分を消費）。将来の日次化は下のcron参照。
+on:
+  workflow_dispatch:
+    inputs:
+      ep:
+        description: "エピソード名（空なら日付から自動: epYYYYMMDD）"
+        required: false
+        default: ""
+  # 日次化する場合はコメントを外す（UTC 22:00 = JST 翌07:00）
+  # schedule:
+  #   - cron: "0 22 * * *"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    services:
+      voicevox:                                   # VOICEVOX ENGINE をサービスコンテナで起動
+        image: voicevox/voicevox_engine:cpu-latest
+        ports:
+          - 50021:50021
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: システム依存（日本語フォント＋Chromium実行ライブラリ）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk libnss3 libatk1.0-0 libatk-bridge2.0-0 \
+            libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
+            || true
+
+      - name: Python依存
+        run: pip install pyyaml requests matplotlib
+
+      - name: Remotion依存＋ブラウザ
+        run: |
+          cd core/remotion
+          npm ci
+          npx remotion browser ensure
+
+      - name: VOICEVOX起動待ち
+        run: |
+          for i in $(seq 1 80); do
+            if curl -sf http://localhost:50021/version >/dev/null; then echo "VOICEVOX ready"; exit 0; fi
+            sleep 3
+          done
+          echo "VOICEVOX not ready"; exit 1
+
+      - name: エピソード名を決定（英数字にサニタイズ）
+        id: ep
+        env:
+          EP_INPUT: ${{ github.event.inputs.ep }}
+        run: |
+          EP="$(printf '%s' "$EP_INPUT" | tr -cd 'A-Za-z0-9_-')"
+          [ -z "$EP" ] && EP="ep$(date +%Y%m%d)"
+          echo "ep=$EP" >> "$GITHUB_OUTPUT"
+          echo "生成対象: $EP"
+
+      - name: 時事ネタ収集（ingest.json）
+        run: python3 core/news-ingest/build_ingest.py channel_04_gold
+
+      - name: 台本生成（Claude・章分割マルチパス）
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          INGEST_MODEL: claude-opus-4-8
+          INGEST_PASSES: "3"
+          EP: ${{ steps.ep.outputs.ep }}
+        run: python3 core/news-ingest/slot_fill.py channel_04_gold "$EP"
+
+      - name: 自動QA（警告があっても続行）
+        env:
+          EP: ${{ steps.ep.outputs.ep }}
+        run: python3 core/build/qa.py channel_04_gold "$EP" || echo "QA warn"
+
+      - name: 音声→グラフ→配置→レンダ（run.sh）
+        env:
+          EP: ${{ steps.ep.outputs.ep }}
+        run: bash core/run.sh channel_04_gold "$EP"
+
+      - name: 完成動画＋台本をアップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: gold-video-${{ steps.ep.outputs.ep }}
+          path: |
+            channels/channel_04_gold/out/${{ steps.ep.outputs.ep }}.mp4
+            channels/channel_04_gold/scripts/${{ steps.ep.outputs.ep }}.txt
+          retention-days: 5
+          if-no-files-found: warn
