@@ -1,0 +1,67 @@
+name: ゴールド台本を生成 (channel_04)
+
+# 手動起動：GitHubの Actions タブ → このワークフロー → 「Run workflow」ボタンで実行。
+on:
+  workflow_dispatch:
+    inputs:
+      ep:
+        description: "エピソード名（空なら日付から自動: epYYYYMMDD）"
+        required: false
+        default: ""
+  # ── 将来の日次自動化 ──
+  # 下のcronのコメントを外すと毎日実行される（UTC 22:00 = JST 翌07:00）。
+  # schedule:
+  #   - cron: "0 22 * * *"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存インストール
+        run: pip install pyyaml
+
+      - name: エピソード名を決定（英数字にサニタイズ）
+        id: ep
+        env:
+          EP_INPUT: ${{ github.event.inputs.ep }}   # ユーザー入力は必ずenv経由で受ける
+        run: |
+          EP="$(printf '%s' "$EP_INPUT" | tr -cd 'A-Za-z0-9_-')"   # シェル特殊文字を除去
+          [ -z "$EP" ] && EP="ep$(date +%Y%m%d)"
+          echo "ep=$EP" >> "$GITHUB_OUTPUT"
+          echo "生成対象: $EP"
+
+      - name: 時事ネタ収集（ingest.json）
+        run: python3 core/news-ingest/build_ingest.py channel_04_gold
+
+      - name: 台本生成（Claude・章分割マルチパス）
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          INGEST_MODEL: claude-opus-4-8
+          INGEST_PASSES: "3"
+          EP: ${{ steps.ep.outputs.ep }}
+        run: python3 core/news-ingest/slot_fill.py channel_04_gold "$EP"
+
+      - name: 自動QA（警告があっても続行）
+        env:
+          EP: ${{ steps.ep.outputs.ep }}
+        run: python3 core/build/qa.py channel_04_gold "$EP" || echo "QA警告あり（内容は上記ログ参照）"
+
+      - name: 成果物をアップロード（台本＋ingest）
+        uses: actions/upload-artifact@v4
+        with:
+          name: gold-${{ steps.ep.outputs.ep }}
+          path: |
+            channels/channel_04_gold/scripts/${{ steps.ep.outputs.ep }}.txt
+            channels/channel_04_gold/out/${{ steps.ep.outputs.ep }}.prompt.txt
+            channels/channel_04_gold/ingest.json
+          if-no-files-found: warn
+
+      # ── 動画化（音声/レンダ）は VOICEVOX と いらすとや/背景素材 が必要なため、
+      #    ダウンロードした台本を手元で `core/run.sh channel_04_gold <ep>` にかけて作る。
+      #    将来 self-hosted ランナー（素材＋VOICEVOX入り）を用意すればここに追加できる。
