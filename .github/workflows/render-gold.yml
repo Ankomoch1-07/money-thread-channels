@@ -2,7 +2,7 @@ name: ゴールド動画をフル生成 (channel_04)
 
 # 手動起動：Actionsタブ →「ゴールド動画をフル生成」→「Run workflow」。
 # 台本生成→VOICEVOX音声化→グラフ→Remotionレンダ まで回して mp4 を作る。
-# ※ 30分尺のレンダはCIで30〜60分かかる（Actions分を消費）。将来の日次化は下のcron参照。
+# ※ CIは非力なので720pで書き出し(REMOTION_EXTRA)＋上限350分。将来の日次化は下のcron参照。
 on:
   workflow_dispatch:
     inputs:
@@ -17,7 +17,7 @@ on:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 350
     services:
       voicevox:                                   # VOICEVOX ENGINE をサービスコンテナで起動
         image: voicevox/voicevox_engine:cpu-latest
@@ -84,9 +84,10 @@ jobs:
           EP: ${{ steps.ep.outputs.ep }}
         run: python3 core/build/qa.py channel_04_gold "$EP" || echo "QA warn"
 
-      - name: 音声→グラフ→配置→レンダ（run.sh）
+      - name: 音声→グラフ→配置→レンダ（run.sh・CIは720p）
         env:
           EP: ${{ steps.ep.outputs.ep }}
+          REMOTION_EXTRA: "--scale=0.6667 --concurrency=2"
         run: bash core/run.sh channel_04_gold "$EP"
 
       - name: 完成動画＋台本をアップロード

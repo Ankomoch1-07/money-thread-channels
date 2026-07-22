@@ -34,8 +34,9 @@ cp "$CHDIR/out/graph/"*.png   "$DEST/graph/" 2>/dev/null || true
 
 echo "▶ 4/4 Remotionレンダ → $CHDIR/out/$EP.mp4"
 # 背景・SEは timeline.json（tts.pyが決定）に入っているので props は channel/ep のみ。
+# REMOTION_EXTRA で追加フラグを渡せる（CIでは 720p 化: --scale=0.6667 等）。ローカルは未設定=1080pのまま。
 ( cd "$ROOT/core/remotion" && npx remotion render src/index.ts Main "../../channels/$CH/out/$EP.mp4" \
-    --props="{\"channel\":\"$CH\",\"ep\":\"$EP\"}" )
+    --props="{\"channel\":\"$CH\",\"ep\":\"$EP\"}" ${REMOTION_EXTRA:-} )
 
 echo "✅ 完成: channels/$CH/out/$EP.mp4"
 echo "   → 人手ゲート: [要ファクトチェック]数値・冒頭30秒・サムネ(vidIQ)を確認し upload.py で予約投稿"
