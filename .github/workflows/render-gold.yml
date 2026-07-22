@@ -87,7 +87,7 @@ jobs:
       - name: 音声→グラフ→配置→レンダ（run.sh・CIは720p）
         env:
           EP: ${{ steps.ep.outputs.ep }}
-          REMOTION_EXTRA: "--scale=0.6667 --concurrency=2"
+          REMOTION_EXTRA: "--scale=0.75 --concurrency=2"
         run: bash core/run.sh channel_04_gold "$EP"
 
       - name: 完成動画＋台本をアップロード
