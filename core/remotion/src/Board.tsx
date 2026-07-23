@@ -24,12 +24,31 @@ export type Seg = {
 };
 export type Timeline = {
   fps: number; title?: string; opImages?: string[]; edImages?: string[]; se?: string | null;
-  bgm?: string | null;
+  bgmOpEd?: string | null; bgmMain?: string | null;
   bg?: string; opBg?: string; bgFrames?: number; opBgFrames?: number; segments: Seg[];
 };
 
 // BGMの音量（ナレーションの下に敷く小音量。0.06〜0.12くらいが目安）
 const BGM_VOLUME = 0.08;
+
+// OP/ED用と中身用の2曲を、境界(opEnd/edStart)でクロスフェードするための音量関数を作る。
+// half = クロスフェード半幅(フレーム)。境界を中心に一方がフェードアウト／他方がフェードイン。
+const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+const makeBgmVolumes = (opEnd: number, edStart: number, half: number) => {
+  const opEdVol = (f: number) =>
+    f < opEnd - half ? BGM_VOLUME
+    : f < opEnd + half ? interpolate(f, [opEnd - half, opEnd + half], [BGM_VOLUME, 0], clamp)
+    : f < edStart - half ? 0
+    : f < edStart + half ? interpolate(f, [edStart - half, edStart + half], [0, BGM_VOLUME], clamp)
+    : BGM_VOLUME;
+  const mainVol = (f: number) =>
+    f < opEnd - half ? 0
+    : f < opEnd + half ? interpolate(f, [opEnd - half, opEnd + half], [0, BGM_VOLUME], clamp)
+    : f < edStart - half ? BGM_VOLUME
+    : f < edStart + half ? interpolate(f, [edStart - half, edStart + half], [BGM_VOLUME, 0], clamp)
+    : 0;
+  return { opEdVol, mainVol };
+};
 
 const CHARA: Record<string, { color: string }> = {
   "ずんだもん":   { color: "#c26a00" }, "玄野武宏": { color: "#b3261e" },
@@ -57,12 +76,28 @@ export const Board: React.FC<{ channel: string; ep: string; timeline: Timeline }
   const descSeg = segs.find((s) => s.phase === "desc");
   const edSeg = segs.find((s) => s.phase === "ed");
 
+  // BGMのクロスフェード境界：OP=先頭〜最初のmain発話 / ED=ed発話以降。中身はその間。
+  const firstMain = segs.find((s) => (s.phase ?? "main") === "main");
+  const lastEnd = segs.length ? segs[segs.length - 1].start + segs[segs.length - 1].dur : 0;
+  const opEnd = firstMain ? firstMain.start : 0;
+  const edStart = edSeg ? edSeg.start : lastEnd;
+  const { opEdVol, mainVol } = makeBgmVolumes(opEnd, edStart, Math.round((timeline.fps || 30) * 0.75));
+  const twoBgm = timeline.bgmOpEd && timeline.bgmMain && timeline.bgmOpEd !== timeline.bgmMain;
+
   return (
     <AbsoluteFill style={{ fontFamily: "sans-serif" }}>
       <Audio src={staticFile(`${channel}/${ep}/voice.wav`)} />
-      {/* BGM：全編ループ・小音量でナレーションの下に敷く（timeline.bgm があるときだけ） */}
-      {timeline.bgm && (
-        <Audio src={staticFile(`${channel}/${timeline.bgm}`)} volume={BGM_VOLUME} loop />
+      {/* BGM：OP/EDと中身で別の曲を、境界でクロスフェード（ナレーションの下に小音量ループ）。
+          曲が1つ（または同一）なら全編そのまま流す。 */}
+      {twoBgm ? (
+        <>
+          <Audio src={staticFile(`${channel}/${timeline.bgmOpEd}`)} volume={opEdVol} loop />
+          <Audio src={staticFile(`${channel}/${timeline.bgmMain}`)} volume={mainVol} loop />
+        </>
+      ) : (
+        (timeline.bgmOpEd || timeline.bgmMain) && (
+          <Audio src={staticFile(`${channel}/${timeline.bgmOpEd || timeline.bgmMain}`)} volume={BGM_VOLUME} loop />
+        )
       )}
       {phase === "hook" && <HookLayer channel={channel} seg={cur} timeline={timeline} />}
       {(phase === "title" || phase === "desc") && titleSeg && (

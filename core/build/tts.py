@@ -165,13 +165,18 @@ def main(channel, script_path):
     print(f"bg: 本編={main_bg}({main_bg_frames}f) / OP={op_bg}({op_bg_frames}f) （ローテ対象{len(bg_pool)}本" +
           (f" ／ 重すぎ除外: {_heavy}" if _heavy else "") + "）")
 
-    # BGM：public/<ch>/bgm/ の音源をエピソードごとにローテ。Board側でループ＋小音量で全編に敷く。
+    # BGM：public/<ch>/bgm/ から2曲選ぶ（OP/ED用＋中身用）。境界でクロスフェード（Board側）。
+    # 1曲しか無ければ両方同じ＝全編そのまま。エピソードごとにローテ。
     bgm_all = sorted(glob.glob(str(pub / "bgm" / "*.mp3")) + glob.glob(str(pub / "bgm" / "*.wav")))
-    bgm_path = ("bgm/" + os.path.basename(bgm_all[_idx % len(bgm_all)])) if bgm_all else None
-    print(f"bgm: {bgm_path or '（なし）'}（候補{len(bgm_all)}本）")
+    bgm_oped = bgm_main = None
+    if bgm_all:
+        n = len(bgm_all)
+        bgm_oped = "bgm/" + os.path.basename(bgm_all[_idx % n])
+        bgm_main = "bgm/" + os.path.basename(bgm_all[(_idx + 1) % n])   # n>=2なら別の曲
+    print(f"bgm: OP/ED={bgm_oped or '（なし）'} / 中身={bgm_main or '（なし）'}（候補{len(bgm_all)}本）")
 
     json.dump({"fps": FPS, "title": title, "opImages": op_images, "edImages": ed_images,
-               "se": se_path, "bgm": bgm_path, "bg": main_bg, "opBg": op_bg,
+               "se": se_path, "bgmOpEd": bgm_oped, "bgmMain": bgm_main, "bg": main_bg, "opBg": op_bg,
                "bgFrames": main_bg_frames, "opBgFrames": op_bg_frames, "segments": segs},
               open(outdir / "timeline.json", "w", encoding="utf-8"), ensure_ascii=False)
     open(outdir / "subs.tsv", "w", encoding="utf-8").write("\n".join(subs))
