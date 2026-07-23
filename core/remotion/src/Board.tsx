@@ -24,8 +24,12 @@ export type Seg = {
 };
 export type Timeline = {
   fps: number; title?: string; opImages?: string[]; edImages?: string[]; se?: string | null;
+  bgm?: string | null;
   bg?: string; opBg?: string; bgFrames?: number; opBgFrames?: number; segments: Seg[];
 };
+
+// BGMの音量（ナレーションの下に敷く小音量。0.06〜0.12くらいが目安）
+const BGM_VOLUME = 0.08;
 
 const CHARA: Record<string, { color: string }> = {
   "ずんだもん":   { color: "#c26a00" }, "玄野武宏": { color: "#b3261e" },
@@ -56,6 +60,10 @@ export const Board: React.FC<{ channel: string; ep: string; timeline: Timeline }
   return (
     <AbsoluteFill style={{ fontFamily: "sans-serif" }}>
       <Audio src={staticFile(`${channel}/${ep}/voice.wav`)} />
+      {/* BGM：全編ループ・小音量でナレーションの下に敷く（timeline.bgm があるときだけ） */}
+      {timeline.bgm && (
+        <Audio src={staticFile(`${channel}/${timeline.bgm}`)} volume={BGM_VOLUME} loop />
+      )}
       {phase === "hook" && <HookLayer channel={channel} seg={cur} timeline={timeline} />}
       {(phase === "title" || phase === "desc") && titleSeg && (
         <CardLayer channel={channel} timeline={timeline} images={timeline.opImages ?? []} animSeg={titleSeg}
