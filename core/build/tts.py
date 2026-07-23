@@ -166,13 +166,18 @@ def main(channel, script_path):
           (f" ／ 重すぎ除外: {_heavy}" if _heavy else "") + "）")
 
     # BGM：public/<ch>/bgm/ から2曲選ぶ（OP/ED用＋中身用）。境界でクロスフェード（Board側）。
-    # 1曲しか無ければ両方同じ＝全編そのまま。エピソードごとにローテ。
+    # ファイル名に op/ed/oped 等を含むものはOP/ED用に優先割当（例 OP_ED.mp3）。残りが中身用。
+    # 名前ヒントが無ければローテで2曲、1曲だけなら両方同じ＝全編そのまま。
     bgm_all = sorted(glob.glob(str(pub / "bgm" / "*.mp3")) + glob.glob(str(pub / "bgm" / "*.wav")))
     bgm_oped = bgm_main = None
     if bgm_all:
-        n = len(bgm_all)
-        bgm_oped = "bgm/" + os.path.basename(bgm_all[_idx % n])
-        bgm_main = "bgm/" + os.path.basename(bgm_all[(_idx + 1) % n])   # n>=2なら別の曲
+        names = [os.path.basename(p) for p in bgm_all]
+        oped_named = [n for n in names if re.search(r"op[_\- ]?ed|oped|opening|ending|^op[_\- ]|op\b", n.lower())]
+        main_named = [n for n in names if n not in oped_named]
+        m = len(names)
+        pick = lambda pool, off: pool[(_idx + off) % len(pool)]
+        bgm_oped = "bgm/" + (pick(oped_named, 0) if oped_named else names[_idx % m])
+        bgm_main = "bgm/" + (pick(main_named, 0) if main_named else names[(_idx + 1) % m])
     print(f"bgm: OP/ED={bgm_oped or '（なし）'} / 中身={bgm_main or '（なし）'}（候補{len(bgm_all)}本）")
 
     json.dump({"fps": FPS, "title": title, "opImages": op_images, "edImages": ed_images,
