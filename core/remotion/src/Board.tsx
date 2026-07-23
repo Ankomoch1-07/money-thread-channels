@@ -29,7 +29,7 @@ export type Timeline = {
 };
 
 // BGMの音量（ナレーションの下に敷く小音量。0.06〜0.12くらいが目安）
-const BGM_VOLUME = 0.08;
+const BGM_VOLUME = 0.07;
 
 // OP/ED用と中身用の2曲を、境界(opEnd/edStart)でクロスフェードするための音量関数を作る。
 // half = クロスフェード半幅(フレーム)。境界を中心に一方がフェードアウト／他方がフェードイン。
